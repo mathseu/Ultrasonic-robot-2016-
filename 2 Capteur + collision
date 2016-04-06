@@ -1,0 +1,83 @@
+// MESURE DE DISTANCE AVEC LE *HC-SR04*  + CAPTEUR DE COLLISION
+
+//On défini les broches de trig et echo, les deux broches du capteurs ( avec la GND et le +5V )
+const int trigPin1 = 7;//broche TRIG du capteur1 hcsr04 sur 2
+const int echoPin1 =8;//broche ECHO du capteur1 hcsr04 sur 4
+const int trigPin2 = 2;//broche TRIG du capteur2 hcsr04 sur 7
+const int echoPin2 = 4;//broche ECHO du capteur2 hcsr04 sur 8
+//broche PIN du capteur hcsr04 sur 4
+//const int LED = 13;
+const int pinContact=13; // pin de lecture du contact du capteur de collision
+
+
+void setup() {
+  Serial.begin(9600);//def la vitesse du programme
+  pinMode(trigPin1, OUTPUT);//Pin en sortie
+  pinMode(echoPin1, INPUT);//Echo en entrée
+  pinMode(trigPin2, OUTPUT);//Pin en sortie
+  pinMode(echoPin2, INPUT);//Echo en entrée
+  digitalWrite(trigPin1,  LOW);
+  digitalWrite(trigPin2,  LOW);
+  pinMode(pinContact,INPUT_PULLUP); //active la résistance pull-up interne
+}
+
+void loop(){
+
+  double duration1,cm1, duration2,cm2;//long equivaut à int, nombres codé sur 4 octets (32 bits)
+
+  boolean etatContact=digitalRead(pinContact); // etat du capteur de collision (lecture)
+  if (!etatContact){ //test inverse car mode INPUT_PULLUP // SI le capteur de collision est a l'etat 0 alors le robot peut continuer de faire son programme
+
+  //digitalWrite(trigPin2,  LOW);
+  //delayMicroseconds(2);
+  digitalWrite(trigPin1, HIGH);//Ici on envoi une impulsion qui est ensuite renvoyée, envoi par trig et reception par echo.
+  digitalWrite(trigPin2, HIGH);//Ici on envoi une impulsion qui est ensuite renvoyée, envoi par trig et reception par echo.
+  delayMicroseconds(10);//delay defini dans la documentation du capteur hc sr04
+  digitalWrite(trigPin2, LOW);//On termine l'impulsion apres 10ms
+  digitalWrite(trigPin1, LOW);//On termine l'impulsion apres 10ms
+
+
+
+ 
+  duration1 = pulseIn(echoPin1, HIGH);//renvoi le temps qu'à pris l'onde pour aller et revenir
+  duration2 = pulseIn(echoPin2, HIGH);//renvoi le temps qu'à pris l'onde pour aller et revenir
+  //Serial.print(duration);
+
+  cm1 = microsecondsToCentimeters(duration1);//fonction qui transforme le temps en distance (cf. fonction à la fin)
+  cm2 = microsecondsToCentimeters(duration2);//fonction qui transforme le temps en distance (cf. fonction à la fin)
+
+
+  Serial.print(cm1, 4 );//affiche la valeur des centimètres, avec 4 chiffre après la virgule
+  Serial.print("cm DU CAPTEUR 1    ");//Affiche la distance en cm puis passe à la ligne.
+  Serial.println(duration1);//saut de ligne*
+  Serial.print(cm2);//affiche la valeur des centimètres, avec 4 chiffre après la virgule
+  Serial.print("cm DU CAPTEUR 2      ");//Affiche la distance en cm puis passe à la ligne.
+  Serial.println(duration2);//saut de ligne
+
+  //Serial.println(duration);
+  Serial.println();
+  if(cm1<200 && cm1>20 || cm2<200 && cm2>20 ){//distance de captage. (entre 200 et 20 cm)
+    Serial.print("ROBOT AVANCE");//A CHANGER PAR LA PARTIE DE PILOU OU ZAC
+    Serial.println();
+  }
+    else{
+      Serial.print("personne NON detecte a moins de 200 cm");//Le robot n'avance pas quand le capteur capte en dehor de la condition ci-dessus
+      Serial.println();
+  }
+  delay(500);//delay ppour l'affichage
+
+  }
+  else {
+    Serial.println("COLLISION");//SI LE CAPTEUR DE COLLISION EST A LETAT 1 ALORS IL Y A COLLISION
+  }
+  
+}
+
+double microsecondsToCentimeters(double microseconds){
+
+  return microseconds / 29 / 2; //Fonction qui avec la vitesse du son transforme le temps en distance (340 m/s donc 29 ms/cm divisé par deux pour avoir 
+                                //seulement la distance d'allé et pas l'aller/retour.
+}
+
+//FIN DU PROGRAMME
+//Source : https://gist.github.com/flakas/3294829 .
